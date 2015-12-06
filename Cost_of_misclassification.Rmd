@@ -1,0 +1,127 @@
+---
+title: "Using Cost of Misclassification To Choose Quality Measures"
+author: "Fernando Hoces de la Guardia"
+output: html_document
+runtime: shiny
+---
+## Under which conditions should HEDIS quality measure be used for Pay for Performance?
+
+### Assumptions
+Throughout this analysis we assume valid measures: quality measures are unbiased estimates of true underlying performance, and this measures cannot be manipulated. Cite all work that focused on this assumption. 
+
+### Benefits
+ - $B_{1}$: Encourage good practices: increase health ($\Delta^{+}$ QALYs)
+ - $B_{2}$: Reduces waste. 
+
+### Costs
+ - $C_{1}$: Implementation costs
+ - $C_{2}$: Misclassification costs:
+    - Naive approach.
+    - Misclassification error attenuates incentives (Rothstein)
+    - Measurement error *affects* optimal level quality (Mullen). 
+
+### Policy Equation
+
+$$
+\begin{aligned}
+W &= \sum_{i  = 1 }^{N} w^{b}_{i} E[B_{i}] - \sum_{j  = 1 }^{M} w^{c}_{j} E[C_{j}]\\
+E[B_{1}] &= f_{1}(\beta_{1})\\
+\dots \\
+E[B_{N}] &= f_{N}(\beta_{N})\\
+E[C_{1}] &= g_{1}(\gamma_{1})\\
+\dots \\
+E[C_{N}] &= g_{M}(\gamma_{M})
+\end{aligned}
+$$
+
+### Toy Example
+
+#### Benefits
+ - $B_{1}$: Establishing a P4P based on quality measures increases $H$ QALYs per dollar paid in bonuses. Each QALY is valued at $P$ dollars.
+$$
+\begin{aligned}
+E[B_{1}] &= H \times P
+\end{aligned}
+$$
+ - $B_{2}$: P4P based on quality measures reduces waste in a fraction $\alpha$ of the costs without P4P $C^{0}$:   
+$$
+\begin{aligned}
+E[B_{2}] &= \alpha C^{0}
+\end{aligned}
+$$
+
+
+### Costs
+ - $C_{1}$: Implementation (measuring and recording quality measures, and deploying P4P) will have a overall costs fixed costs of $FC$
+$$
+\begin{aligned}
+E[C_{1}] &= FC
+\end{aligned}
+$$
+
+ - $C_{2}$: Misclassification costs each dollar that was assign to physicians that did not "deserve" it, will be consider as wasteful. The average fraction of misclasified resources is $m$. 
+$$
+\begin{aligned}
+E[C_{2}] &= m(H \times P + \alpha C^{0})
+\end{aligned}
+$$
+
+Finally policy makers may choose to weigh costs and benefits differently, depending on components outside the reach of the evidence gathered here. This different valuations are captured in the weights $w^{b}_{\cdot}, w^{c}_{\cdot}$ set by default to 1. The only requirement is that such values should be recorded and tracked as part of the overall decision of any stakeholder. 
+
+We propose that this framework should be used to include 
+
+```{r, echo=FALSE}
+inputPanel(
+  sliderInput("param1", label = "H",
+              min = 0.2, max = 5, value = c(1,1.3) , step = 0.1), 
+  sliderInput("param2", label = "P",
+              min = 0.2, max = 5, value = c(1,1.3), step = 0.1), 
+  sliderInput("param3", label = "alpha",
+              min = 0.01, max = .5, value = c(.1,.3), step = 0.01),
+  sliderInput("param4", label = "C0",
+              min = 1, max = 2, value = c(1,1.3), step = 0.1), 
+  sliderInput("param5", label = "FC",
+              min = .1, max = 2, value = c(1,1.3), step = 0.1), 
+  sliderInput("param6", label = "m",
+              min = 0.01, max = .5, value = c(.1,.3), step = 0.01)
+)
+
+toy.costs <- function(size = 1000,
+                      H.par = c(1,2), P.par = c(0.5,3), 
+                      alpha.par = c(.01, .3) , C0.par = c(10,15), 
+                      FC.par = c(100, 200), 
+                      m.par = c(.01, .3) ) 
+{
+  H.val <- runif(size, min = H.par[1], max = H.par[2])
+  P.val <- runif(size, min = P.par[1], max = P.par[2])
+  alpha.val <- runif(size, min = alpha.par[1], max = alpha.par[2])
+  C0.val <- runif(size, min = C0.par[1], max = C0.par[2])
+  FC.val <- runif(size, min = FC.par[1], max = FC.par[2])
+  m.val <- runif(size, min = m.par[1], max = m.par[2])
+  return( H.val * P.val + alpha.val * C0.val - 
+            FC.val - m.val * (H.val * P.val + alpha.val * C0.val) )
+} 
+
+renderPlot({
+  set.seed(123)
+  W.val <- toy.costs(size = 1000, 
+                      H.par = as.numeric(input$param1), 
+                      P.par = as.numeric(input$param2),
+                      alpha.par = as.numeric(input$param3),
+                      C0.par = as.numeric(input$param4), 
+                      FC.par = as.numeric(input$param5), 
+                      m.par = as.numeric(input$param6))
+  hist(W.val, breaks = 50, probability = TRUE, ltw = 1, 
+       xlim =c(-2,2), ylim = c(0,3),
+       main = "Welfare Effects of P4P: Toy Example")
+  abline(v=0, cex=3, col ="red")
+})
+```
+
+## Methodological inovations:
+ - Make explicit all the components in the policy decision model.
+ - Set up the decision model in a open source format and keep track of all changes. 
+ - Allow for all the parameters to be modifiable within their range. 
+ - Propose that each decision has to be tied to a set of known parameters. 
+
+Later versions of this framework should link each slider with a drop down menu for the relevant literature. 
