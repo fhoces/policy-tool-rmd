@@ -111,7 +111,7 @@ renderPlot({
                       C0.par = as.numeric(input$param4), 
                       FC.par = as.numeric(input$param5), 
                       m.par = as.numeric(input$param6))
-  hist(W.val, breaks = 50, probability = TRUE, ltw = 1, 
+  hist(W.val, breaks = 50, probability = TRUE, 
        xlim =c(-2,2), ylim = c(0,3),
        main = "Welfare Effects of P4P with Misclassification: Toy Example")
   abline(v=0, cex=3, col ="red")
